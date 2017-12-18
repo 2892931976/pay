@@ -41,6 +41,14 @@ class WebGateway extends Alipay
     {
         parent::pay($config_biz);
 
+        if (!empty($config_biz['httpMethod']) && $config_biz['httpMethod'] == 'GET'){
+
+            //拼接GET请求串
+            $requestUrl = $this->gateway."?".http_build_query($this->config);
+
+            return $requestUrl;
+        }
+
         return $this->buildPayHtml();
     }
 }

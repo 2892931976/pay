@@ -15,7 +15,7 @@ abstract class Alipay implements GatewayInterface
     /**
      * @var string
      */
-    protected $gateway = 'https://openapi.alipay.com/gateway.do'.'?charset=utf-8';
+    protected $gateway = 'https://openapi.alipay.com/gateway.do';
 
     /**
      * alipay global config params.
@@ -151,14 +151,15 @@ abstract class Alipay implements GatewayInterface
      */
     public function verify($data, $sign = null, $sync = false)
     {
-        if (is_null($this->user_config->get('ali_public_key'))) {
+        $pubKey = $this->user_config->get('ali_public_key');
+        if (is_null($pubKey)) {
             throw new InvalidArgumentException('Missing Config -- [ali_public_key]');
         }
 
         $sign = is_null($sign) ? $data['sign'] : $sign;
 
         $res = "-----BEGIN PUBLIC KEY-----\n".
-                wordwrap($this->user_config->get('ali_public_key'), 64, "\n", true).
+                wordwrap($pubKey, 64, "\n", true).
                 "\n-----END PUBLIC KEY-----";
 
         $toVerify = $sync ? json_encode($data) : $this->getSignContent($data, true);
@@ -193,7 +194,7 @@ abstract class Alipay implements GatewayInterface
      */
     protected function buildPayHtml()
     {
-        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='".$this->gateway."' method='POST'>";
+        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='".$this->gateway."?charset=".trim($this->config['charset'])."' method='POST'>";
         while (list($key, $val) = each($this->config)) {
             $val = str_replace("'", '&apos;', $val);
             $sHtml .= "<input type='hidden' name='".$key."' value='".$val."'/>";
@@ -269,7 +270,6 @@ abstract class Alipay implements GatewayInterface
     protected function getSignContent(array $toBeSigned, $verify = false)
     {
         ksort($toBeSigned);
-
         $stringToBeSigned = '';
         foreach ($toBeSigned as $k => $v) {
             if ($verify && $k != 'sign' && $k != 'sign_type') {
